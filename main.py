@@ -1,16 +1,53 @@
 from fastapi import Body, FastAPI
 from pydantic import BaseModel
-
-
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import time
 
 app = FastAPI()
-class AuthenticationModel(BaseModel):
-    authId: int
 
+while True:
+        try:
+            conn = psycopg2.connect(host='localhost',database='carwash',user='postgres',password='Aditya123',cursor_factory=RealDictCursor)
+            cursor = conn.cursor()
+            print('Database connected successfully')
+            break
+        except Exception as error:
+            print('Database connection failed because of - '+error)
+            time.sleep(secs=2)
+
+class AuthenticationModel(BaseModel):
+    auth_id: int
+
+class UserDataModel(BaseModel):
+    user_name: str
+    user_contact: int
+    auth_id: str
 
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+@app.post('/createUser')
+def create_user(userDataModel:UserDataModel):
+    cursor.execute("""INSERT INTO users (user_name,user_contact,auth_id) VALUES (%s,%s,%s) RETURNING *""",(userDataModel.user_name,userDataModel.user_contact,userDataModel.auth_id))
+    new_user_data = cursor.fetchone()
+    conn.commit()
+    return {"message": "New user successfully created","data":new_user_data}
+
+@app.get("/getUser/{auth_id}")
+def get_user_by_id(auth_id:int):
+    cursor.execute("""SELECT * FROM users WHERE auth_id = 1""")
+    fetched_user_data = cursor.fetchone()
+    print(fetched_user_data)
+    return {"message": "User successfully found","data":fetched_user_data}
+
+
+@app.get("/getAllUser")
+def root():
+    cursor.execute("""SELECT * FROM users""")
+    users = cursor.fetchall()
+    return {"data": users}
 
 @app.post('/authenticateUser')
 def authenticate_user(authenticationModel:AuthenticationModel):
