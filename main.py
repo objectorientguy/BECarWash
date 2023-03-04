@@ -8,43 +8,58 @@ import time
 app = FastAPI()
 
 while True:
-        try:
-            conn = psycopg2.connect(host='localhost',database='carwash',user='postgres',password='Aditya123',cursor_factory=RealDictCursor)
-            cursor = conn.cursor()
-            print('Database connected successfully')
-            break
-        except Exception as error:
-            print('Database connection failed because of - '+error)
-            time.sleep(secs=2)
+    try:
+        conn = psycopg2.connect(host='localhost', database='carwash',
+                                user='postgres', password='Aditya123', cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print('Database connected successfully')
+        break
+    except Exception as error:
+        print('Database connection failed because of - '+error)
+        time.sleep(secs=2)
 
-class UserDataModel(BaseModel):
-    user_name: str
-    user_contact: int
-    oauth: Optional [int]
 
-class UserUpdateDataModel(BaseModel):
-    user_name: str
+class CreateCustomerDataModel(BaseModel):
+    customer_id: int
+    customer_name: str
+    customer_contact: int
+    is_new_customer: Optional[bool]
+
+
+class AuthenticatedUserDataModel(BaseModel):
+    customer_id: int
+    customer_name: str
+    customer_contact: int
+    is_new_customer: bool
+
+    def __init__(self, customer_id, customer_name, customer_contact, is_new_customer):
+        self.customer_id = customer_id
+        self.customer_name = customer_name
+        self.customer_contact = customer_contact
+        self.is_new_customer = is_new_customer
+
+class UpdateUserDataModel(BaseModel):
+    customer_name: str
 
 
 @app.post('/createUser')
-def create_user(userDataModel:UserDataModel):
-    cursor.execute("""INSERT INTO users (user_name,user_contact,oauth) VALUES (%s,%s,%s) RETURNING *""",(userDataModel.user_name,userDataModel.user_contact,userDataModel.oauth))
+def create_user(createCustomerDataModel: CreateCustomerDataModel):
+    cursor.execute("""INSERT INTO customers (customer_id,customer_name,customer_contact) VALUES (%s,%s,%s) RETURNING *""",
+                   (createCustomerDataModel.customer_id, createCustomerDataModel.customer_name, createCustomerDataModel.customer_contact))
     new_user_data = cursor.fetchone()
     conn.commit()
-    return {"message": "New user successfully created!","data":new_user_data}
+    return {"message": "New user successfully created!", "data": new_user_data}
 
-@app.get("/authenticateUser/{oauth}")
-def fetched_user_data(oauth:int):
-    cursor.execute("""SELECT * FROM users WHERE oauth = %s""",(str(oauth),))
-    updated_user_data = cursor.fetchone()
-    return {"message": "User exsists!","data":updated_user_data}
 
-@app.post('/updateUserData/{user_id}')
-def edit_user_data(user_id:int,userUpdateDataModel:UserUpdateDataModel):
-    cursor.execute("""UPDATE users SET user_name = %s WHERE user_id = %s RETURNING *""",(userUpdateDataModel.user_name,str(user_id)))
+@app.get("/authenticateUser/{customer_id}")
+def fetched_user_data(customer_id: int):
+    cursor.execute("""SELECT * FROM customers WHERE customer_id = %s""", (str(customer_id),))
+    AuthenticatedUserDataModel = cursor.fetchone()
+    return {"message": "User authenticated successfully!", "data": AuthenticatedUserDataModel}
+
+@app.post('/updateUserData/{customer_id}')
+def update_user_data(customer_id:int,userUpdateDataModel:UpdateUserDataModel):
+    cursor.execute("""UPDATE customers SET customer_name = %s WHERE customer_id = %s RETURNING *""",(userUpdateDataModel.customer_name,str(customer_id)))
     updated_user_data = cursor.fetchone()
     conn.commit()
-    return {"message": "This API will help user to edit user profile"}
-
-
-
+    return {"message": "User details updated successfully!", "data":updated_user_data}
