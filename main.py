@@ -25,7 +25,6 @@ class CreateCustomerDataModel(BaseModel):
     customer_contact: int
     is_new_customer: Optional[bool]
 
-
 class AuthenticatedUserDataModel(BaseModel):
     customer_id: int
     customer_name: str
@@ -41,6 +40,14 @@ class AuthenticatedUserDataModel(BaseModel):
 class UpdateUserDataModel(BaseModel):
     customer_name: str
 
+class AddAddressDataModel(BaseModel):
+    customer_contact :int
+    address_details:str
+
+class AddressesDataModel(BaseModel):
+    address_id:int
+    customer_contact :int
+    address_details:str
 
 @app.post('/createUser')
 def create_user(createCustomerDataModel: CreateCustomerDataModel):
@@ -63,3 +70,17 @@ def update_user_data(customer_id:int,userUpdateDataModel:UpdateUserDataModel):
     updated_user_data = cursor.fetchone()
     conn.commit()
     return {"message": "User details updated successfully!", "data":updated_user_data}
+
+@app.post('/addAddress')
+def add_address(addAddressDataModel: AddAddressDataModel):
+    cursor.execute("""INSERT INTO address (customer_contact,address_details)VALUES (%s,%s) RETURNING *""",(addAddressDataModel.customer_contact,addAddressDataModel.address_details))
+    added_address_data = cursor.fetchone()
+    conn.commit()
+    return {"message": "New address added successfully!", "data": added_address_data}
+
+@app.get('/getUsersAllAddresses/{customer_contact}')
+def get_user_all_addresses(customer_contact:int):
+    cursor.execute("""SELECT * FROM address WHERE customer_contact = %s""", (str(customer_contact),))
+    AuthenticatedUserDataModel = [dict(item) for item in cursor.fetchall()]
+    return {"message": "Address fetched successfully!", "data": AuthenticatedUserDataModel}
+   
