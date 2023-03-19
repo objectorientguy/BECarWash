@@ -12,6 +12,11 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
+@app.get('/')
+def get_message():
+    return {'message': 'hello world'}
+
+
 @app.post('/getUser')
 def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db: Session = Depends(get_db)):
     user_data = db.query(models.Authentication).get(
