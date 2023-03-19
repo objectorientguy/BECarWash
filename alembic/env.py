@@ -11,7 +11,7 @@ from app.config import settings
 # access to the values within the .ini file in use.
 config = context.config
 config.set_main_option(
-    "sqlalchemy.url", f'postgresql+psycopg2://{settings.db_url}')
+    "sqlalchemy.url", 'postgresql://postgres: Mun1chad$@ localhost: 5432/carwash')
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

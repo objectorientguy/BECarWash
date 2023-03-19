@@ -13,7 +13,7 @@ app = FastAPI()
 
 
 @app.get('/')
-def get_message():
+def root():
     return {'message': 'hello world'}
 
 
