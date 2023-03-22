@@ -76,7 +76,7 @@ def create_booking(addBookings: schemas.Bookings, response: Response, db: Sessio
 
 @app.get('/getbooking/booking_id={id}')
 def get_address(response: Response, db: Session = Depends(get_db), id=int):
-    booking = db.query(models.Bookings).get(id).first()
+    booking = db.query(models.Bookings).get(id)
 
     if not booking:
         response.status_code = 404
