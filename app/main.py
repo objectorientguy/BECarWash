@@ -42,7 +42,7 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
 @app.get('/getUserDetails')
 def get_user_details(response: Response, db: Session = Depends(get_db), id: int | None = None):
     get_user = db.query(models.Authentication).filter(
-        models.Authentication.user_contact == id).all()
+        models.Authentication.customer_contact == id).all()
 
     if not get_user:
         response.status_code = 404
