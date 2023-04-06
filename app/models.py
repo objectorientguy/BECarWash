@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, Boolean, BIGINT
-from sqlalchemy.orm import validates
+from sqlalchemy import Column, String, Boolean, BIGINT, ForeignKey
+from sqlalchemy.orm import validates, relationship
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.expression import text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 
 from .database import Base
@@ -29,11 +30,15 @@ class Addresses(Base):
     __tablename__ = "address"
 
     address_id = Column(BIGINT, nullable=False, primary_key=True)
-    user_contact = Column(BIGINT, nullable=False)
+    user_contact = Column(BIGINT, ForeignKey(
+        "customers.customer_contact", ondelete="CASCADE"), nullable=False)
     address_title = Column(String, nullable=False)
     address_name = Column(String, nullable=False)
     city = Column(String, nullable=False)
     pincode = Column(BIGINT, nullable=False)
+
+    customer = relationship(
+        "Authentication")
 
     @validates('user_contact', 'address_title', 'address_name', 'city', 'pincode')
     def empty_string_to_null(self, key, value):
@@ -47,13 +52,18 @@ class Bookings(Base):
     __tablename__ = "bookings"
 
     booking_id = Column(BIGINT, nullable=False, primary_key=True)
-    user_contact = Column(BIGINT, nullable=False)
-    address_id = Column(BIGINT, nullable=False)
+    user_contact = Column(BIGINT, ForeignKey(
+        "customers.customer_contact", ondelete="CASCADE"), nullable=False)
+    address_id = Column(BIGINT, ForeignKey(
+        "address.address_id", ondelete="CASCADE"), nullable=False)
     booking_time = Column(String, nullable=False)
     booking_date = Column(String, nullable=False)
     services = Column(String, nullable=False)
     final_amount = Column(String, nullable=False)
     payment_mode = Column(String, nullable=False)
+
+    customer = relationship("Authentication")
+    address = relationship("Addresses")
 
     @validates('user_contact', 'address_id', 'booking_time', 'booking_date', 'services', 'final_amount', 'payment_mode')
     def empty_string_to_null(self, key, value):

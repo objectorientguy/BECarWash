@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -8,8 +8,24 @@ class UserData(BaseModel):
     customer_contact: int
     is_new_customer: Optional[bool]
 
+    class Config:
+        orm_mode = True
+
+
+class GetUserData(BaseModel):
+    customer_id: str
+    customer_name: Optional[str]
+    is_new_customer: Optional[bool]
+
+    class Config:
+        orm_mode = True
+
 
 class LoginSignupAuth(UserData):
+    pass
+
+
+class UpdateCustomer(UserData):
     pass
 
 
@@ -25,8 +41,20 @@ class Address(BaseModel):
         orm_mode = True
 
 
-class addAddress(Address):
+class AddAddress(Address):
     pass
+
+
+class GetAddress(Address):
+    customer: UserData
+
+    class Config:
+        orm_mode = True
+
+
+class ResponseData(BaseModel):
+    status: int
+    data: List[GetAddress]
 
 
 class Bookings(BaseModel):
@@ -41,3 +69,17 @@ class Bookings(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class GetBooking(Bookings):
+    customer: GetUserData
+    address: Address
+
+    class Config:
+        orm_mode = True
+
+
+class AllBookingData(BaseModel):
+    status: int
+    data: List[GetBooking]
+    message: str
