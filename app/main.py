@@ -39,16 +39,16 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
     return {"status": "200", "message": "New user successfully Logged in!", "data": user_data}
 
 
-@app.get('/getUserDetails')
-def get_user_details(response: Response, db: Session = Depends(get_db), id: int | None = None):
-    get_user = db.query(models.Authentication).filter(
-        models.Authentication.customer_contact == id).all()
+# @app.get('/getUserDetails')
+# def get_user_details(response: Response, db: Session = Depends(get_db), id: int | None = None):
+#     get_user = db.query(models.Authentication).filter(
+#         models.Authentication.customer_contact == id).all()
 
-    if not get_user:
-        response.status_code = 404
-        return {"status": "404", "message": "No address found", "data": []}
+#     if not get_user:
+#         response.status_code = 404
+#         return {"status": "404", "message": "No address found", "data": []}
 
-    return {"status": "200", "message": "success", "data": get_user}
+#     return {"status": "200", "message": "success", "data": get_user}
 
 
 @app.put('/editUser')
