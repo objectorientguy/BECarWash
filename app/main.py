@@ -39,20 +39,20 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
     return {"status": "200", "message": "New user successfully Logged in!", "data": user_data}
 
 
-# @app.get('/getUserDetails')
-# def get_user_details(response: Response, db: Session = Depends(get_db), id: int | None = None):
-#     get_user = db.query(models.Authentication).filter(
-#         models.Authentication.customer_contact == id).all()
+@app.get('/getUserDetails')
+def get_user_details(response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
+    get_user = db.query(models.Authentication).filter(
+        models.Authentication.customer_contact == id).all()
 
-#     if not get_user:
-#         response.status_code = 404
-#         return {"status": "404", "message": "No address found", "data": []}
+    if not get_user:
+        response.status_code = 404
+        return {"status": "404", "message": "No address found", "data": []}
 
-#     return {"status": "200", "message": "success", "data": get_user}
+    return {"status": "200", "message": "success", "data": get_user}
 
 
 @app.put('/editUser')
-def edit_user(userDetail: schemas.UserData, response: Response, db: Session = Depends(get_db), id: str | None = None):
+def edit_user(userDetail: schemas.UserData, response: Response, db: Session = Depends(get_db), id: Optional[str] = None):
     edit_uder_details = db.query(models.Authentication).filter(
         models.Authentication.customer_id == id)
     user_exist = edit_uder_details.first()
@@ -79,7 +79,7 @@ def add_address(createAddress: schemas.AddAddress, response: Response, db: Sessi
 
 
 @app.get('/getAllAddresses')
-def get_address(response: Response, db: Session = Depends(get_db), id: int | None = None):
+def get_address(response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
     user_addresses = db.query(models.Addresses).filter(
         models.Addresses.user_contact == id).all()
 
@@ -132,8 +132,8 @@ def create_booking(addBookings: schemas.Bookings, response: Response, db: Sessio
 
 
 @app.get('/getAllBookings')
-def get_bookings(response: Response, db: Session = Depends(get_db), id: int | None = None,
-                 bkDate: str | None = None, history: bool | None = None):
+def get_bookings(response: Response, db: Session = Depends(get_db), id: Optional[int] = None,
+                 bkDate: Optional[str] = None, history: Optional[bool] = None):
     try:
 
         if not id:
