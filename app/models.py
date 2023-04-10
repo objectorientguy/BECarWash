@@ -1,9 +1,10 @@
-from sqlalchemy import Column, String, Boolean, BIGINT, ForeignKey
+from sqlalchemy import Column, String, Boolean, BIGINT, ForeignKey, Date, Time
 from sqlalchemy.orm import validates, relationship
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.expression import text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+from datetime import datetime
 
 from .database import Base
 
@@ -56,8 +57,8 @@ class Bookings(Base):
         "customers.customer_contact", ondelete="CASCADE"), nullable=False)
     address_id = Column(BIGINT, ForeignKey(
         "address.address_id", ondelete="CASCADE"), nullable=False)
-    booking_time = Column(String, nullable=False)
-    booking_date = Column(String, nullable=False)
+    booking_time = Column(Time, nullable=False)
+    booking_date = Column(Date, nullable=False)
     services = Column(String, nullable=False)
     final_amount = Column(String, nullable=False)
     payment_mode = Column(String, nullable=False)
@@ -65,7 +66,7 @@ class Bookings(Base):
     customer = relationship("Authentication")
     address = relationship("Addresses")
 
-    @validates('user_contact', 'address_id', 'booking_time', 'booking_date', 'services', 'final_amount', 'payment_mode')
+    @validates('user_contact', 'address_id', 'services', 'final_amount', 'payment_mode')
     def empty_string_to_null(self, key, value):
         if isinstance(value, str) and value == '':
             return None
