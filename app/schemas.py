@@ -52,6 +52,17 @@ class GetAddress(Address):
         orm_mode = True
 
 
+class EditAddress(BaseModel):
+    user_contact: int
+    address_title: str
+    address_name: str
+    city: str
+    pincode: int
+
+    class Config:
+        orm_mode = True
+
+
 class ResponseData(BaseModel):
     status: int
     data: List[GetAddress]
@@ -83,3 +94,19 @@ class AllBookingData(BaseModel):
     status: int
     data: List[GetBooking]
     message: str
+
+
+class GetBookingUser(Bookings):
+    address: Address
+
+    class Config:
+        orm_mode = True
+
+
+class GetUserBookings(BaseModel):
+    status: int
+    data: List[GetBookingUser]
+    message: str
+
+    class Config:
+        orm_mode = True

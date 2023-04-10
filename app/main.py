@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional, List
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends, Query
 from pydantic import BaseModel
@@ -6,7 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, cast, Time
+from sqlalchemy import func, cast, Date
 from . import models, schemas
 from .database import engine, SessionLocal, get_db
 models.Base.metadata.create_all(bind=engine)
@@ -91,7 +91,7 @@ def get_address(response: Response, db: Session = Depends(get_db), id: Optional[
 
 
 @app.put('/editAddress')
-def edit_address(editAddress: schemas.Address, response: Response, db: Session = Depends(get_db),  id=int):
+def edit_address(editAddress: schemas.EditAddress, response: Response, db: Session = Depends(get_db),  id=int):
     edit_user_address = db.query(models.Addresses).filter(
         models.Addresses.address_id == id)
     address_exist = edit_user_address.first()
@@ -101,7 +101,7 @@ def edit_address(editAddress: schemas.Address, response: Response, db: Session =
 
     edit_user_address.update(editAddress.dict(), synchronize_session=False)
     db.commit()
-    return {"status": "200", "message": "address edited!", "data": edit_user_address.first()}
+    return {"status": "200", "message": "address edited!", "data": edit_user_address}
 
 
 @app.delete('/deleteAddress')
@@ -131,26 +131,20 @@ def create_booking(addBookings: schemas.Bookings, response: Response, db: Sessio
         return {"status": "404", "message": "Error", "data": {}}
 
 
-@app.get('/getAllBookings')
+@app.get('/getAllBookings', response_model=schemas.GetUserBookings)
 def get_bookings(response: Response, db: Session = Depends(get_db), id: Optional[int] = None,
-                 bkDate: Optional[str] = None, history: Optional[bool] = None):
+                 history: Optional[bool] = None):
     try:
-
-        if not id:
-            portal_bookings = db.query(models.Bookings).filter(
-                models.Bookings.booking_date == bkDate).order_by(models.Bookings.booking_time).all()
-            return {"status": "200", "message": "All db booking", "data": portal_bookings}
-
         if history:
             user_history = db.query(models.Bookings).filter(
                 models.Bookings.user_contact == id).order_by(func.date(models.Bookings.booking_date)).all()
-            return {"status": "200", "message": "success", "data": user_history}
+            return schemas.GetUserBookings(status=200, data=user_history, message="Booking data with customer and address no id")
 
         user_bookings = db.query(models.Bookings).filter(models.Bookings.user_contact == id).filter(
-            func.date(models.Bookings.booking_date) >= datetime.today().date().strftime('%d.%m.%Y')).order_by(
+            func.date(models.Bookings.booking_date) >= date.today().strftime('%d.%m.%Y')).order_by(
             models.Bookings.booking_time).all()
 
-        return {"status": "200", "message": "success", "data": user_bookings}
+        return schemas.GetUserBookings(status=200, data=user_bookings, message="Booking data with customer and address no id")
 
     except IntegrityError as err:
         response.status_code = 404
@@ -172,11 +166,14 @@ def delete_booking(response: Response, db: Session = Depends(get_db),  id=int):
 
 
 @app.get('/getBookings', response_model=schemas.AllBookingData)
-def getforeign_key_data(response: Response, db: Session = Depends(get_db), id=int):
+def portal_data(response: Response, db: Session = Depends(get_db), id: Optional[str] = None):
     try:
-        get_foreign_data = db.query(models.Bookings).filter(
-            models.Bookings.user_contact == id).order_by(func.date(models.Bookings.booking_date)).all()
-        return schemas.AllBookingData(status=200, data=get_foreign_data, message="Booking data with customer and address")
+        if id:
+            get_portal_data = db.query(models.Bookings).filter(
+                models.Bookings.booking_date == id).all()
+            return schemas.AllBookingData(status=200, data=get_portal_data, message="Booking data with customer and address with id")
+        get_all_data = db.query(models.Bookings).all()
+        return schemas.AllBookingData(status=200, data=get_all_data, message="Booking data with customer and address no id")
     except IntegrityError as err:
         response.status_code = 404
         return {"status": "404", "message": "Error", "data": {}}
