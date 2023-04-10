@@ -137,11 +137,11 @@ def get_bookings(response: Response, db: Session = Depends(get_db), id: Optional
     try:
         if history:
             user_history = db.query(models.Bookings).filter(
-                models.Bookings.user_contact == id).order_by(func.date(models.Bookings.booking_date)).all()
+                models.Bookings.user_contact == id).order_by(models.Bookings.booking_date).all()
             return schemas.GetUserBookings(status=200, data=user_history, message="Booking data with customer and address no id")
 
         user_bookings = db.query(models.Bookings).filter(models.Bookings.user_contact == id).filter(
-            func.date(models.Bookings.booking_date) >= date.today().strftime('%d.%m.%Y')).order_by(
+            models.Bookings.booking_date >= date.today().strftime('%d.%m.%Y')).order_by(
             models.Bookings.booking_time).all()
 
         return schemas.GetUserBookings(status=200, data=user_bookings, message="Booking data with customer and address no id")

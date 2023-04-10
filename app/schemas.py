@@ -1,5 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel
+from datetime import date, time
 
 
 class UserData(BaseModel):
@@ -72,8 +73,8 @@ class Bookings(BaseModel):
     booking_id: Optional[int]
     user_contact: int
     address_id: int
-    booking_time: str
-    booking_date: str
+    booking_time: time
+    booking_date: date
     services: str
     final_amount: str
     payment_mode: str
