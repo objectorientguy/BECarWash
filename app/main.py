@@ -45,13 +45,13 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
                 db.refresh(new_user_data)
                 return {"status": "200", "message": "New user successfully created!", "data": new_user_data}
             except IntegrityError as err:
-                response.status_code = 200
-                return {"status": "200", "message": "No user found", "data": {}}
+                response.status_code = 404
+                return {"status": "404", "message": "No user found", "data": {}}
 
         return {"status": "200", "message": "New user successfully Logged in!", "data": user_data}
     except IntegrityError as err:
-        response.status_code = 200
-        return {"status": "200", "message": "Error", "data": {}}
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": {}}
 
 
 @app.get('/getUserDetails')
