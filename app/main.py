@@ -43,15 +43,15 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
                 db.add(new_user_data)
                 db.commit()
                 db.refresh(new_user_data)
-                return {"status": "200", "message": "New user successfully created!", "data": new_user_data}
+                return {"status": 200, "message": "New user successfully created!", "data": new_user_data}
             except IntegrityError as err:
-                response.status_code = 200
-                return {"status": "404", "message": "No user found", "data": {}}
+                response.status_code = 404
+                return {"status": 404, "message": "No user found", "data": {}}
 
-        return {"status": "200", "message": "New user successfully Logged in!", "data": user_data}
+        return {"status": 200, "message": "New user successfully Logged in!", "data": user_data}
     except IntegrityError as err:
-        response.status_code = 200
-        return {"status": "404", "message": "Error", "data": {}}
+        response.status_code = 404
+        return {"status": 404, "message": "Error", "data": {}}
 
 
 @app.get('/getUserDetails')
@@ -63,12 +63,12 @@ def get_user_details(response: Response, db: Session = Depends(get_db), id: Opti
 
         if not get_user:
             response.status_code = 404
-            return {"status": "404", "message": "No address found", "data": []}
+            return {"status": 404, "message": "No address found", "data": []}
 
-        return {"status": "200", "message": "success", "data": get_user}
+        return {"status": 200, "message": "success", "data": get_user}
     except IntegrityError as err:
         response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        return {"status": 404, "message": "Error", "data": {}}
 
 
 @app.put('/editUser')
@@ -79,14 +79,14 @@ def edit_user(userDetail: schemas.UserData, response: Response, db: Session = De
         user_exist = edit_uder_details.first()
         if not user_exist:
             response.status_code = 404
-            return {"status": "404", "message": "User doesn't exists", "data": {}}
+            return {"status": 404, "message": "User doesn't exists", "data": {}}
 
         edit_uder_details.update(userDetail.dict(), synchronize_session=False)
         db.commit()
-        return {"status": "200", "message": "user edited!", "data": edit_uder_details.first()}
+        return {"status": 200, "message": "user edited!", "data": edit_uder_details.first()}
     except IntegrityError as err:
         response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        return {"status": 404, "message": "Error", "data": {}}
 
 
 @app.post('/addAddress')
