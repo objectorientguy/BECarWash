@@ -23,6 +23,7 @@ def upgrade():
                     sa.Column('customer_name', sa.String(),
                               nullable=False, primary_key=True),
                     sa.Column('customer_contact', sa.BIGINT(), nullable=False),
+                    sa.Column('customer_birthdate', sa.Date(), nullable=True),
                     sa.Column('is_new_customer', sa.Boolean(),
                               server_default='t', nullable=False),
                     sa.Column('created_at', sa.TIMESTAMP(timezone=True),

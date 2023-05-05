@@ -15,6 +15,7 @@ class Authentication(Base):
     customer_id = Column(String, nullable=False)
     customer_name = Column(String, nullable=False)
     customer_contact = Column(BIGINT, primary_key=True, nullable=False)
+    customer_birthdate = Column(Date, nullable=True)
     is_new_customer = Column(Boolean, server_default='TRUE')
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
@@ -62,6 +63,7 @@ class Bookings(Base):
     services = Column(String, nullable=False)
     final_amount = Column(String, nullable=False)
     payment_mode = Column(String, nullable=False)
+    employee = Column(String, nullable=True)
 
     customer = relationship("Authentication")
     address = relationship("Addresses")

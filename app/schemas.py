@@ -7,6 +7,7 @@ class UserData(BaseModel):
     customer_id: str
     customer_name: Optional[str]
     customer_contact: int
+    customer_birthdate: Optional[date]
     is_new_customer: Optional[bool]
 
     class Config:
@@ -16,7 +17,9 @@ class UserData(BaseModel):
 class GetUserData(BaseModel):
     customer_id: str
     customer_name: Optional[str]
+    customer_birthdate: Optional[date]
     is_new_customer: Optional[bool]
+    
 
     class Config:
         orm_mode = True
@@ -64,11 +67,6 @@ class EditAddress(BaseModel):
         orm_mode = True
 
 
-class ResponseData(BaseModel):
-    status: int
-    data: List[GetAddress]
-
-
 class Bookings(BaseModel):
     booking_id: Optional[int]
     user_contact: int
@@ -78,10 +76,23 @@ class Bookings(BaseModel):
     services: str
     final_amount: str
     payment_mode: str
+    employee: Optional[str]
 
     class Config:
         orm_mode = True
 
+class EditBookings(BaseModel):
+    user_contact: int
+    address_id: int
+    booking_time: time
+    booking_date: date
+    services: str
+    final_amount: str
+    payment_mode: str
+    employee: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 class GetBooking(Bookings):
     customer: GetUserData

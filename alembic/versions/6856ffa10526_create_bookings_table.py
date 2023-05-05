@@ -28,6 +28,7 @@ def upgrade():
                     sa.Column('services', sa.String(), nullable=False),
                     sa.Column('final_amount', sa.String(), nullable=False),
                     sa.Column('payment_mode', sa.String(), nullable=False),
+                    sa.Column('employee', sa.String(), nullable=True),
                     )
     op.create_foreign_key('booking_user_fk', source_table="bookings", referent_table="customers", local_cols=[
                           'user_contact'], remote_cols=['customer_contact'], ondelete="CASCADE")

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, cast, Date
 from . import models, schemas
+from sqlalchemy import desc
 from .database import engine, SessionLocal, get_db
 models.Base.metadata.create_all(bind=engine)
 
@@ -45,8 +46,8 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
                 db.refresh(new_user_data)
                 return {"status": 200, "message": "New user successfully created!", "data": new_user_data}
             except IntegrityError as err:
-                response.status_code = 404
-                return {"status": 404, "message": "No user found", "data": {}}
+                response.status_code = 200
+                return {"status": 404, "message": "User is Not Registered please Singup", "data": {}}
 
         return {"status": 200, "message": "New user successfully Logged in!", "data": user_data}
     except IntegrityError as err:
@@ -119,18 +120,19 @@ def get_address(response: Response, db: Session = Depends(get_db), id: Optional[
 
 
 @app.put('/editAddress')
-def edit_address(editAddress: schemas.EditAddress, response: Response, db: Session = Depends(get_db),  id=int):
+def edit_address(editAddress: schemas.EditAddress, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
     try:
         edit_user_address = db.query(models.Addresses).filter(
             models.Addresses.address_id == id)
         address_exist = edit_user_address.first()
         if not address_exist:
             response.status_code = 200
-            return {"status": "200", "message": "Address doesn't exists", "data": {}}
+            return {"status": 404, "message": "Address doesn't exists", "data": {}}
 
-        edit_user_address.update(editAddress.dict(), synchronize_session=False)
+        edit_user_address.update(editAddress.dict(
+            exclude_unset=True), synchronize_session=False)
         db.commit()
-        return {"status": "200", "message": "address edited!", "data": edit_user_address}
+        return {"status": "200", "message": "address edited!", "data": address_exist}
 
     except IntegrityError as err:
         response.status_code = 404
@@ -149,7 +151,7 @@ def delete_user_address(response: Response, db: Session = Depends(get_db),  id=i
 
         delete_address.delete(synchronize_session=False)
         db.commit()
-        return {"status": "200", "message": "address edited!", "data": {}}
+        return {"status": "200", "message": "address deleted!", "data": {}}
     except IntegrityError as err:
         response.status_code = 404
         return {"status": "404", "message": "Error", "data": {}}
@@ -162,7 +164,7 @@ def create_booking(addBookings: schemas.Bookings, response: Response, db: Sessio
         db.add(new_booking)
         db.commit()
         db.refresh(new_booking)
-        return {"status": "200", "message": "New address created!", "data": new_booking}
+        return {"status": "200", "message": "New Booking created!", "data": new_booking}
     except IntegrityError as err:
         response.status_code = 404
         return {"status": "404", "message": "Error", "data": {}}
@@ -174,7 +176,7 @@ def get_bookings(response: Response, db: Session = Depends(get_db), id: Optional
     try:
         if history:
             user_history = db.query(models.Bookings).filter(
-                models.Bookings.user_contact == id).order_by(models.Bookings.booking_date).all()
+                models.Bookings.user_contact == id).order_by(desc(models.Bookings.booking_id)).all()
             return schemas.GetUserBookings(status=200, data=user_history, message="Booking data with customer and address no id")
 
         user_bookings = db.query(models.Bookings).filter(models.Bookings.user_contact == id).filter(
@@ -195,15 +197,15 @@ def delete_booking(response: Response, db: Session = Depends(get_db),  id=int):
             models.Bookings.booking_id == id)
         booking_exist = delete_bookings.first()
         if not booking_exist:
-            response.status_code = 404
-            return {"status": "404", "message": "Booking doesn't exists", "data": {}}
+            response.status_code = 200
+            return {"status": 404, "message": "Booking doesn't exists", "data": {}}
 
         delete_bookings.delete(synchronize_session=False)
         db.commit()
-        return {"status": "200", "message": "booking delete!", "data": {}}
+        return {"status": 200, "message": "booking delete!", "data": {}}
     except IntegrityError as err:
         response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        return {"status": 404, "message": "Error", "data": {}}
 
 
 @app.get('/getBookings', response_model=schemas.AllBookingData)
@@ -218,3 +220,23 @@ def portal_data(response: Response, db: Session = Depends(get_db), id: Optional[
     except IntegrityError as err:
         response.status_code = 404
         return {"status": "404", "message": "Error", "data": {}}
+
+
+@app.put('/editBookings')
+def edit_booking(bookingDetails: schemas.EditBookings, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
+    try:
+        edit_booking_details = db.query(models.Bookings).filter(
+            models.Bookings.booking_id == id)
+        booking_exist = edit_booking_details.first()
+        if not booking_exist:
+            response.status_code = 200
+            return {"status": 404, "message": "Booking doesn't exists", "data": {}}
+
+        edit_booking_details.update(
+            bookingDetails.dict(exclude_unset=True), synchronize_session=False)
+        db.commit()
+        return {"status": 200, "message": "Booking edited!", "data": booking_exist}
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": 404, "message": "Error", "data": {}}
+
