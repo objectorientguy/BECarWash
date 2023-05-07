@@ -132,7 +132,7 @@ def edit_address(editAddress: schemas.EditAddress, response: Response, db: Sessi
         edit_user_address.update(editAddress.dict(
             exclude_unset=True), synchronize_session=False)
         db.commit()
-        return {"status": "200", "message": "address edited!", "data": address_exist}
+        return {"status": "200", "message": "address edited!", "data": edit_user_address.first()}
 
     except IntegrityError as err:
         response.status_code = 404
@@ -235,7 +235,7 @@ def edit_booking(bookingDetails: schemas.EditBookings, response: Response, db: S
         edit_booking_details.update(
             bookingDetails.dict(exclude_unset=True), synchronize_session=False)
         db.commit()
-        return {"status": 200, "message": "Booking edited!", "data": booking_exist}
+        return {"status": 200, "message": "Booking edited!", "data": edit_booking_details.first()}
     except IntegrityError as err:
         response.status_code = 404
         return {"status": 404, "message": "Error", "data": {}}
