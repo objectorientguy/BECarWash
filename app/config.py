@@ -2,7 +2,7 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    db_url = 'carwashdevs:YbaPElydvXjLYoRzdVD23n91u0q3196W@dpg-cgbu2d5269v4ictdp800-a/carwashdb'
+    db_url = 'carwashdb_gv4e_user:8sv7IryuQE7R8yDfTNSHF97HqLATIgJD@dpg-cicnvmiip7vnjjl9ecmg-a.singapore-postgres.render.com/carwashdb_gv4e'
 
     class Config:
         env_file = ".env"
