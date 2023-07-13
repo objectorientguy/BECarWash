@@ -240,3 +240,127 @@ def edit_booking(bookingDetails: schemas.EditBookings, response: Response, db: S
         response.status_code = 404
         return {"status": 404, "message": "Error", "data": {}}
 
+
+@app.post('/addCenter')
+def add_center(addCenter: schemas.Center, response: Response, db: Session = Depends(get_db)):
+    try:
+        new_center = models.Centers(**addCenter.dict())
+        db.add(new_center)
+        db.commit()
+        db.refresh(new_center)
+        return {"status": "200", "message": "New Centre Added!", "data": new_center}
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": {}}
+
+
+@app.get('/getAllCenters', response_model=schemas.AllCenters)
+def get_all_centers(response: Response, db: Session = Depends(get_db)):
+    try:
+        all_centers = db.query(models.Centers).all()
+        return schemas.AllCenters(status=200, data=all_centers, message="All centers fetched")
+
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": []}
+
+
+@app.put('/editCenter')
+def edit_center(editCenter: schemas.EditCenter, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
+    try:
+        edit_centers = db.query(models.Centers).filter(
+            models.Centers.center_id == id)
+        center_exist = edit_centers.first()
+        if not center_exist:
+            response.status_code = 200
+            return {"status": 404, "message": "Center doesn't exists", "data": {}}
+
+        edit_centers.update(editCenter.dict(
+            exclude_unset=True), synchronize_session=False)
+        db.commit()
+        return {"status": "200", "message": "Center edited!", "data": edit_centers.first()}
+
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": {}}
+
+
+@app.delete('/deleteCenter')
+def delete_center(response: Response, db: Session = Depends(get_db),  id=int):
+    try:
+        delete_centers = db.query(models.Centers).filter(
+            models.Centers.center_id == id)
+        center_exist = delete_centers.first()
+        if not center_exist:
+            response.status_code = 200
+            return {"status": 404, "message": "Booking doesn't exists", "data": {}}
+
+        delete_centers.delete(synchronize_session=False)
+        db.commit()
+        return {"status": 200, "message": "Center deleted!", "data": {}}
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": 404, "message": "Error", "data": {}}
+
+
+@app.post('/addCenterService')
+def add_center_service(addCenterService: schemas.AddServices, response: Response, db: Session = Depends(get_db)):
+    try:
+        new_service = models.CenterServices(**addCenterService.dict())
+        db.add(new_service)
+        db.commit()
+        db.refresh(new_service)
+        return {"status": "200", "message": "New Service added!", "data": new_service}
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": {}}
+
+
+@app.get('/getAllService', response_model=schemas.AllCenterServices)
+def get_all_service(response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
+    try:
+        all_service = db.query(models.CenterServices).filter(
+            models.CenterServices.center_id == id).all()
+        return schemas.AllCenterServices(status=200, data=all_service, message="All services fetched")
+
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": []}
+
+
+@app.put('/editService')
+def edit_services(editService: schemas.EditServices, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
+    try:
+        edit_service = db.query(models.CenterServices).filter(
+            models.CenterServices.service_id == id)
+        service_exist = edit_service.first()
+        if not service_exist:
+            response.status_code = 200
+            return {"status": 404, "message": "Center doesn't exists", "data": {}}
+
+        edit_service.update(editService.dict(
+            exclude_unset=True), synchronize_session=False)
+        db.commit()
+        return {"status": "200", "message": "Service edited!", "data": edit_service.first()}
+
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": "404", "message": "Error", "data": {}}
+
+
+@app.delete('/deleteService')
+def delete_sercvices(response: Response, db: Session = Depends(get_db),  id=int):
+    try:
+        delete_service = db.query(models.CenterServices).filter(
+            models.CenterServices.service_id == id)
+        service_exist = delete_service.first()
+        if not service_exist:
+            response.status_code = 200
+            return {"status": 404, "message": "Service doesn't exists", "data": {}}
+
+        delete_service.delete(synchronize_session=False)
+        db.commit()
+        return {"status": 200, "message": "Service deleted!", "data": {}}
+    except IntegrityError as err:
+        response.status_code = 404
+        return {"status": 404, "message": "Error", "data": {}}
