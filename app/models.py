@@ -91,24 +91,3 @@ class Centers(Base):
             return None
         else:
             return value
-
-
-class CenterServices(Base):
-    __tablename__ = "center_services"
-
-    service_id = Column(BIGINT, nullable=False, primary_key=True)
-    center_id = Column(BIGINT, ForeignKey(
-        "centers.center_id", ondelete="CASCADE"), nullable=False)
-    service_title = Column(String, nullable=False)
-    service_cost = Column(BIGINT, nullable=False)
-    service_discount = Column(BIGINT, nullable=False)
-    service_details = Column(String, nullable=False)
-
-    customer = relationship("Centers")
-
-    @validates('service_title', 'service_cost', 'service_discount', 'service_details')
-    def empty_string_to_null(self, key, value):
-        if isinstance(value, str) and value == '':
-            return None
-        else:
-            return value
