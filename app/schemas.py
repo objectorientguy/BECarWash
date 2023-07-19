@@ -131,6 +131,7 @@ class Center(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
+    likes: bool
 
     class Config:
         orm_mode = True
@@ -141,6 +142,7 @@ class EditCenter(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
+    likes: bool
 
     class Config:
         orm_mode = True
