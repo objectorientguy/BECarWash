@@ -84,7 +84,6 @@ class Centers(Base):
     center_address = Column(String,  nullable=False)
     center_ratings = Column(BIGINT, nullable=True)
     center_details = Column(String, nullable=False)
-    likes = Column(Boolean, nullable=False, server_default='FALSE')
 
     @validates('center_name', 'center_address', 'center_ratings', 'center_details')
     def empty_string_to_null(self, key, value):

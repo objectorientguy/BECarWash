@@ -131,7 +131,6 @@ class Center(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
-    likes: bool
 
     class Config:
         orm_mode = True
@@ -142,7 +141,6 @@ class EditCenter(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
-    likes: bool
 
     class Config:
         orm_mode = True
@@ -151,6 +149,48 @@ class EditCenter(BaseModel):
 class AllCenters(BaseModel):
     status: int
     data: List[Center]
+    message: str
+
+    class Config:
+        orm_mode = True
+
+
+class AddServices(BaseModel):
+    service_id: Optional[int]
+    center_id: int
+    service_title: str
+    service_cost: int
+    service_discount: int
+    service_details: str
+
+    class Config:
+        orm_mode = True
+
+
+class Services(BaseModel):
+    service_id: Optional[int]
+    service_title: str
+    service_cost: int
+    service_discount: int
+    service_details: str
+
+    class Config:
+        orm_mode = True
+
+
+class EditServices(BaseModel):
+    service_title: str
+    service_cost: int
+    service_discount: int
+    service_details: str
+
+    class Config:
+        orm_mode = True
+
+
+class AllCenterServices(BaseModel):
+    status: int
+    data: List[Services]
     message: str
 
     class Config:
