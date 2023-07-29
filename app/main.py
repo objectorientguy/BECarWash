@@ -1,9 +1,18 @@
-from datetime import date
+from datetime import date,timedelta,datetime
 from typing import Optional, List
-from fastapi import Body, FastAPI, Response, status, HTTPException, Depends, Query
+from fastapi import Body, FastAPI, Response, status, HTTPException, Depends, Query, File, UploadFile
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
+import os
+import requests
+from typing import Dict
+import firebase_admin
+from firebase_admin import credentials, storage
+from fastapi.responses import JSONResponse
+import shutil
+import time
+import firebase_admin
 from psycopg2.extras import RealDictCursor
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -12,6 +21,7 @@ from . import models, schemas
 from sqlalchemy import desc
 from .database import engine, SessionLocal, get_db
 models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
@@ -25,10 +35,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get('/')
 def root():
     return {'message': 'hello world'}
+
+   # code to connect database
+while True:
+    try:
+      conn =psycopg2.connect(host='localhost',database='fastapi',user='postgres',password='sakshishukla@2335',cursor_factory=RealDictCursor) 
+      cursor = conn.cursor()
+      print("Database connection was successful!!")
+      break
+    except Exception as error:   
+        print("connection to database failed!!")
+        print("Error:",error)
+        time.sleep(2)
+
+
 
 
 @app.post('/authenticateUser')
@@ -39,12 +62,12 @@ def create_user(loginSignupAuth: schemas.LoginSignupAuth, response: Response, db
 
         if not user_data:
             try:
-                new_user_data = models.Authentication(
+                new_portal_user = models.Authentication(
                     **loginSignupAuth.dict())
-                db.add(new_user_data)
+                db.add(new_portal_user)
                 db.commit()
-                db.refresh(new_user_data)
-                return {"status": 200, "message": "New user successfully created!", "data": new_user_data}
+                db.refresh(new_portal_user)
+                return {"status": 200, "message": "New user successfully created!", "data": new_portal_user}
             except IntegrityError as err:
                 response.status_code = 200
                 return {"status": 404, "message": "User is Not Registered please Singup", "data": {}}
@@ -241,126 +264,169 @@ def edit_booking(bookingDetails: schemas.EditBookings, response: Response, db: S
         return {"status": 404, "message": "Error", "data": {}}
 
 
-@app.post('/addCenter')
-def add_center(addCenter: schemas.Center, response: Response, db: Session = Depends(get_db)):
+
+@app.post('/authenticatePortal')
+def create_portal_user(portalLoginSignup: schemas.PortalAuthentication, response: Response, db: Session = Depends(get_db)):
     try:
-        new_center = models.Centers(**addCenter.dict())
-        db.add(new_center)
-        db.commit()
-        db.refresh(new_center)
-        return {"status": "200", "message": "New Centre Added!", "data": new_center}
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        existing_user = db.query(models.PortalAuthenticate).filter_by(email=portalLoginSignup.email).first()
 
+        if existing_user:
+            if existing_user.password == portalLoginSignup.password:
+                return {"status": 200, "message": "Portal user successfully logged in!", "data": existing_user}
+            else:
+                return {"status": 401, "message": "invalid password."}
 
-@app.get('/getAllCenters', response_model=schemas.AllCenters)
-def get_all_centers(response: Response, db: Session = Depends(get_db)):
-    try:
-        all_centers = db.query(models.Centers).all()
-        return schemas.AllCenters(status=200, data=all_centers, message="All centers fetched")
+        try:
+            new_portal_user_ = models.PortalAuthenticate(**portalLoginSignup.dict())
+            db.add(new_portal_user_)
+            db.commit() 
+            db.refresh(new_portal_user_)
+            return {"status": 200, "message": "New Portal user successfully created!", "data": new_portal_user_}
 
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": []}
-
-
-@app.put('/editCenter')
-def edit_center(editCenter: schemas.EditCenter, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
-    try:
-        edit_centers = db.query(models.Centers).filter(
-            models.Centers.center_id == id)
-        center_exist = edit_centers.first()
-        if not center_exist:
+        except IntegrityError as err:
             response.status_code = 200
-            return {"status": 404, "message": "Center doesn't exists", "data": {}}
-
-        edit_centers.update(editCenter.dict(
-            exclude_unset=True), synchronize_session=False)
-        db.commit()
-        return {"status": "200", "message": "Center edited!", "data": edit_centers.first()}
+            return {"status": 401, "message": "Please login."}
 
     except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        response.status_code = 500
+        return {"status": 500, "message": "Error", "data": {}}
+    
 
 
-@app.delete('/deleteCenter')
-def delete_center(response: Response, db: Session = Depends(get_db),  id=int):
+@app.get('/subscriptionInfo')
+def get_subscription_info(user_id: int = Query(..., description="User ID"), db: Session = Depends(get_db)):
+    user = db.query(models.BookSubscription).filter_by(customer_id=user_id).first()
+
+    if user:
+        subscription_info = get_user_subscription_info(user, db)
+        return {"status": 200, "message": "Subscription information retrieved successfully!", "data": subscription_info}
+
+    return {"status": 404, "message": "No subscription for this id", "data": {}}
+
+def get_user_subscription_info(user: models.BookSubscription, db: Session):
+    subscription = db.query(models.BookSubscription).filter_by(customer_id=user.customer_id).first()
+
+    print(f"Subscription: {subscription}")  # Check if subscription object is retrieved
+
+    if subscription:
+        pending_washes = subscription.num_bookings_pending
+        last_booking_date = calculate_last_booking_date(subscription.subscribed_on, subscription.num_bookings)
+
+        print(f"Pending Washes: {pending_washes}")
+        print(f"Last Booking Date: {last_booking_date}")
+
+        subscription_info = {
+            "customer_id": subscription.customer_id,
+            "subscribed_on": subscription.subscribed_on,
+            "ends_on": subscription.ends_on,
+            "num_bookings": subscription.num_bookings,
+            "num_bookings_pending": subscription.num_bookings_pending,
+            "cost": subscription.cost,
+            "pending_washes": pending_washes
+        }
+        print(f"Subscription Info: {subscription_info}")
+        return subscription_info
+    return {}
+
+def calculate_last_booking_date(subscribed_on: datetime, num_bookings: int):
+    last_booking_date = subscribed_on + timedelta(days=num_bookings)
+    return last_booking_date 
+
+
+#deleting subscription
+
+@app.delete('/subscriptionInfo')
+def delete_subscription_info(user_id: int, response: Response, db: Session = Depends(get_db)):
     try:
-        delete_centers = db.query(models.Centers).filter(
-            models.Centers.center_id == id)
-        center_exist = delete_centers.first()
-        if not center_exist:
-            response.status_code = 200
-            return {"status": 404, "message": "Booking doesn't exists", "data": {}}
+        subscription = db.query(models.BookSubscription).filter_by(customer_id=user_id).first()
 
-        delete_centers.delete(synchronize_session=False)
+        if not subscription:
+            response.status_code = 404
+            return {"status": 404, "message": "Subscription not found.", "data": {}}
+
+        db.delete(subscription)
         db.commit()
-        return {"status": 200, "message": "Center deleted!", "data": {}}
+
+        return {"status": 200, "message": "Subscription deleted successfully!", "data": {}}
+
     except IntegrityError as err:
-        response.status_code = 404
-        return {"status": 404, "message": "Error", "data": {}}
+        response.status_code = 500
+        return {"status": 500, "message": "Error", "data": {}}
+    
+  
+def get_booking_by_id(db: Session, booking_id: int):
+    return db.query(models.Bookings).filter(models.Bookings.booking_id == booking_id).first()
+
+#check booking subscription 
+@app.get("/booking_subscription_info/")
+def booking_subscription_info(booking_id: int = Query(..., description="The ID of the booking"), db: Session = Depends(get_db)):
+    booking = get_booking_by_id(db, booking_id)
+
+    if not booking:
+        return {
+            "status": 400,
+            "message": "Booking not found for this id",
+            "data": {}
+        }
+
+    booking_data = {k: v for k, v in booking.__dict__.items() if not k.startswith('_')}
+    booking_data.pop("subscription_id", None)
+
+    subscription_data = None
+    message = "Booking is not associated with subscription"
+
+    if booking.subscription_id is not None:
+        subscription_data = {
+            "subscription_id": booking.subscription.subscription_id,
+            "customer_id": booking.subscription.customer_id,
+            "subscribed_on": booking.subscription.subscribed_on,
+            "ends_on": booking.subscription.ends_on,
+            "num_bookings": booking.subscription.num_bookings,
+            "num_bookings_pending": booking.subscription.num_bookings_pending,
+            "cost": booking.subscription.cost,
+        }
+        message = "Booking is associated with subscription"
+
+    return {
+        "status": 200,
+        "message": message,
+        "data": {
+            "booking": booking_data,
+            "subscription": subscription_data,
+        }
+    }
 
 
-@app.post('/addCenterService')
-def add_center_service(addCenterService: schemas.AddServices, response: Response, db: Session = Depends(get_db)):
+cred = credentials.Certificate("app/carwash-b9a26-firebase-adminsdk-x8l5f-f18978c5a4.json")
+firebase_admin.initialize_app(cred, {"storageBucket": "carwash-b9a26.appspot.com"})
+
+app = FastAPI()
+
+def save_upload_file(upload_file: UploadFile, destination: str):
     try:
-        new_service = models.CenterServices(**addCenterService.dict())
-        db.add(new_service)
-        db.commit()
-        db.refresh(new_service)
-        return {"status": "200", "message": "New Service added!", "data": new_service}
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
+        with open(destination, "wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+    finally:
+        upload_file.file.close()
 
+@app.post("/upload_images/")
+async def upload_images(upload_files: List[UploadFile] = File(...)):
+    image_urls = []
+    for upload_file in upload_files:
+        destination = os.path.join("app", "uploaded_images", upload_file.filename)
+        save_upload_file(upload_file, destination)
 
-@app.get('/getAllService', response_model=schemas.AllCenterServices)
-def get_all_service(response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
-    try:
-        all_service = db.query(models.CenterServices).filter(
-            models.CenterServices.center_id == id).all()
-        return schemas.AllCenterServices(status=200, data=all_service, message="All services fetched")
+        bucket = storage.bucket()
+        blob = bucket.blob(f"uploaded_images/{upload_file.filename}")
+        blob.upload_from_filename(destination)
 
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": []}
+        image_url = blob.generate_signed_url(method="GET", expiration=timedelta(days=7))
+        image_urls.append(image_url)
 
+    response_data = {
+        "status": 200,
+        "message": "Images uploaded successfully.",
+        "data": {"image_urls": image_urls}
+    }
 
-@app.put('/editService')
-def edit_services(editService: schemas.EditServices, response: Response, db: Session = Depends(get_db), id: Optional[int] = None):
-    try:
-        edit_service = db.query(models.CenterServices).filter(
-            models.CenterServices.service_id == id)
-        service_exist = edit_service.first()
-        if not service_exist:
-            response.status_code = 200
-            return {"status": 404, "message": "Center doesn't exists", "data": {}}
-
-        edit_service.update(editService.dict(
-            exclude_unset=True), synchronize_session=False)
-        db.commit()
-        return {"status": "200", "message": "Service edited!", "data": edit_service.first()}
-
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": "404", "message": "Error", "data": {}}
-
-
-@app.delete('/deleteService')
-def delete_sercvices(response: Response, db: Session = Depends(get_db),  id=int):
-    try:
-        delete_service = db.query(models.CenterServices).filter(
-            models.CenterServices.service_id == id)
-        service_exist = delete_service.first()
-        if not service_exist:
-            response.status_code = 200
-            return {"status": 404, "message": "Service doesn't exists", "data": {}}
-
-        delete_service.delete(synchronize_session=False)
-        db.commit()
-        return {"status": 200, "message": "Service deleted!", "data": {}}
-    except IntegrityError as err:
-        response.status_code = 404
-        return {"status": 404, "message": "Error", "data": {}}
+    return JSONResponse(content=response_data)

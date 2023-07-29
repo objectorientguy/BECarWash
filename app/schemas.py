@@ -77,6 +77,14 @@ class Bookings(BaseModel):
     payment_mode: str
     employee: Optional[str]
 
+    payment_breakdown: str
+    review: int
+    feedback: str
+    center_id: int
+    coupons_applied: str
+    coupon_discount: str
+    subscription_id: Optional[int]
+
     class Config:
         orm_mode = True
 
@@ -131,6 +139,7 @@ class Center(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
+    favourite: bool
 
     class Config:
         orm_mode = True
@@ -141,6 +150,7 @@ class EditCenter(BaseModel):
     center_address: str
     center_ratings: int
     center_details: str
+    favourite: bool  
 
     class Config:
         orm_mode = True
@@ -150,6 +160,7 @@ class AllCenters(BaseModel):
     status: int
     data: List[Center]
     message: str
+    favourite: bool  
 
     class Config:
         orm_mode = True
@@ -195,3 +206,29 @@ class AllCenterServices(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PortalAuthentication(BaseModel):
+    portal_user_id: Optional[int]
+    email: str
+    password: str
+    user_name: str
+    class Config:
+        orm_mode = True
+
+class BookSubscription(BaseModel):
+    subscription_id:Optional[int]
+    customer_id: int
+    subscribed_on: date 
+    ends_on: date
+    num_bookings: int
+    num_bookings_pending: int
+    cost: float
+    
+    class Config:
+        orm_mode = True
+
+
+
+
+ 
+    
